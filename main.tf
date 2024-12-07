@@ -1,20 +1,22 @@
 ### CREATE KEY PAIR AND RETRIEVE PRIVATE KEY ###
 
-resource "tls_private_key" "tlsauth" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
+### AVOID GENERATING KEYS IN TERRAFORM AS PRIVATE/PUBLIC KEYS WILL APPEAR IN TFSTATE FILES ###
 
-resource "aws_key_pair" "auth" {
-  key_name   = "${var.name_prefix}-key"
-    public_key = tls_private_key.tlsauth.public_key_openssh
-  tags = {
-    Name = "${var.name_prefix}-key"
-  }
-provisioner "local-exec" { 
-    command = "echo '${tls_private_key.tlsauth.private_key_pem}' > '../keys/${var.name_prefix}-key.pem' && chmod 400 '../keys/${var.name_prefix}-key.pem'"
-  }
-}
+# resource "tls_private_key" "tlsauth" {
+#   algorithm = "RSA"
+#   rsa_bits  = 4096
+# }
+
+# resource "aws_key_pair" "auth" {
+#   key_name   = "${var.name_prefix}-key"
+#     public_key = tls_private_key.tlsauth.public_key_openssh
+#   tags = {
+#     Name = "${var.name_prefix}-key"
+#   }
+# provisioner "local-exec" { 
+#     command = "echo '${tls_private_key.tlsauth.private_key_pem}' > '../keys/${var.name_prefix}-key.pem' && chmod 400 '../keys/${var.name_prefix}-key.pem'"
+#   }
+# }
 
 ### CREATE DYNAMODB TABLE FOR BOOK INVENTORY ###
 
@@ -158,8 +160,8 @@ resource "aws_instance" "ec2_db_reader" {
  instance_type          = var.instance_type
  subnet_id = local.selected_subnet_ids[0] # just use first private/public subnet in the vpc 
  vpc_security_group_ids = [aws_security_group.ec2_security_group.id]
-#  key_name                = "${var.name_prefix}-key" # use attribute so key is created first
-key_name = aws_key_pair.auth.key_name
+ key_name                = "${var.name_prefix}-key" # use pre-created key
+# key_name = aws_key_pair.auth.key_name # use this if key is created in tf code
 iam_instance_profile = aws_iam_instance_profile.instance_profile.name
 
  associate_public_ip_address = var.public_subnet
